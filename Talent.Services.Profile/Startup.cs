@@ -122,6 +122,15 @@ namespace Talent.Services.Profile
 
             app.UseCors("AllowWebAppAccess");
 
+            // Serve uploaded files (saved by FileService) from the local images folder.
+            var imagesPath = System.IO.Path.Combine(env.ContentRootPath, "images");
+            System.IO.Directory.CreateDirectory(imagesPath);
+            app.UseStaticFiles(new StaticFileOptions
+            {
+                FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(imagesPath),
+                RequestPath = "/images"
+            });
+
             app.UseRouting();
             app.UseAuthentication();
             app.UseAuthorization();

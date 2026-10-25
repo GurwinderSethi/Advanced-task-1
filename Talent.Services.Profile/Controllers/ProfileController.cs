@@ -242,8 +242,12 @@ namespace Talent.Services.Profile.Controllers
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "talent")]
         public async Task<ActionResult> UpdateProfilePhoto()
         {
-            //TODO: Your code here;
-            throw new NotImplementedException();
+            IFormFile file = Request.Form.Files[0];
+            if (await _profileService.UpdateTalentPhoto(_userAppContext.CurrentUserId, file))
+            {
+                return Json(new { Success = true });
+            }
+            return Json(new { Success = false });
         }
 
         [HttpPost("updateTalentCV")]

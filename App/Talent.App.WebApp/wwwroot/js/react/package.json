@@ -14,7 +14,7 @@
     "react-router-dom": "^4.2.2"
   },
   "scripts": {
-    "build": "NODE_OPTIONS=--openssl-legacy-provider webpack"
+    "build": "cross-env NODE_OPTIONS=--openssl-legacy-provider webpack"
   },
   "author": "MVP Studio",
   "license": "ISC",
@@ -23,6 +23,7 @@
     "babel-loader": "^7.1.4",
     "babel-preset-env": "^1.6.1",
     "babel-preset-react": "^6.24.1",
+    "cross-env": "^7.0.3",
     "fetch": "^1.1.0",
     "js-cookie": "^2.2.0",
     "query-string": "^6.2.0",
