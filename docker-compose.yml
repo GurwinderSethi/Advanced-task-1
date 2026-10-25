@@ -1,0 +1,33 @@
+# All credentials and ports come from a local .env file (see .env.example).
+services:
+  mongo:
+    image: mongo:4.4
+    container_name: talent-mongodb
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME:?set in .env}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:?set in .env}
+      MONGO_INITDB_DATABASE: TalentDb
+      MONGO_APP_USER: ${MONGO_APP_USER:?set in .env}
+      MONGO_APP_PASSWORD: ${MONGO_APP_PASSWORD:?set in .env}
+    ports:
+      - "${MONGO_HOST_PORT:?set in .env}:${MONGO_CONTAINER_PORT:?set in .env}"
+    volumes:
+      - mongodb_data:/data/db
+      - ./mongo-init.sh:/docker-entrypoint-initdb.d/mongo-init.sh:ro
+    networks:
+      - talent-network
+    healthcheck:
+      test: ["CMD-SHELL", "mongo --quiet --eval 'db.runCommand({ ping: 1 }).ok'"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+volumes:
+  mongodb_data:
+    driver: local
+
+networks:
+  talent-network:
+    driver: bridge
