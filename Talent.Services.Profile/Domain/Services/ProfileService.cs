@@ -422,22 +422,48 @@ namespace Talent.Services.Profile.Domain.Services
             throw new NotImplementedException();
         }
 
-        public async Task<IEnumerable<string>> GetTalentSuggestionIds(string employerOrJobId, bool forJob, int position, int increment)
+        public Task<IEnumerable<string>> GetTalentSuggestionIds(string employerOrJobId, bool forJob, int position, int increment)
         {
-            //TODO: Your code here;
-            throw new NotImplementedException();
+            // No matching between employers/jobs and talent yet, so every active talent is a suggestion.
+            // Most recently updated profiles come first so the feed shows fresh talent.
+            var ids = _userRepository.GetQueryable()
+                .Where(x => !x.IsDeleted)
+                .OrderByDescending(x => x.UpdatedOn)
+                .Skip(Math.Max(position, 0))
+                .Take(Math.Max(increment, 0))
+                .Select(x => x.Id)
+                .ToList();
+
+            return Task.FromResult<IEnumerable<string>>(ids);
         }
 
         public async Task<IEnumerable<TalentSnapshotViewModel>> GetTalentSnapshotList(string employerOrJobId, bool forJob, int position, int increment)
         {
-            //TODO: Your code here;
-            throw new NotImplementedException();
+            var ids = await GetTalentSuggestionIds(employerOrJobId, forJob, position, increment);
+            return await GetTalentSnapshotList(ids);
         }
 
         public async Task<IEnumerable<TalentSnapshotViewModel>> GetTalentSnapshotList(IEnumerable<string> ids)
         {
-            //TODO: Your code here;
-            throw new NotImplementedException();
+            var idList = (ids ?? Enumerable.Empty<string>()).ToList();
+            if (idList.Count == 0)
+            {
+                return new List<TalentSnapshotViewModel>();
+            }
+
+            var talents = (await _userRepository.Get(x => idList.Contains(x.Id))).ToList();
+
+            // Return snapshots in the same order as the requested ids.
+            var snapshots = new List<TalentSnapshotViewModel>();
+            foreach (var id in idList)
+            {
+                var talent = talents.FirstOrDefault(x => x.Id == id);
+                if (talent != null)
+                {
+                    snapshots.Add(await ViewModelFromTalent(talent));
+                }
+            }
+            return snapshots;
         }
 
         #region TalentMatching
@@ -527,6 +553,36 @@ namespace Talent.Services.Profile.Domain.Services
                 Level = language.LanguageLevel,
                 Name = language.Language,
                 CurrentUserId = language.UserId
+            };
+        }
+
+        protected async Task<TalentSnapshotViewModel> ViewModelFromTalent(User talent)
+        {
+            var name = string.Join(" ", new[] { talent.FirstName, talent.MiddleName, talent.LastName }
+                .Where(x => !string.IsNullOrWhiteSpace(x)));
+
+            var latestJob = (talent.Experience ?? new List<UserExperience>())
+                .OrderByDescending(x => x.Start)
+                .FirstOrDefault();
+
+            return new TalentSnapshotViewModel
+            {
+                Id = talent.Id,
+                Name = name,
+                PhotoId = talent.ProfilePhotoUrl,
+                VideoUrl = string.IsNullOrWhiteSpace(talent.VideoName)
+                    ? ""
+                    : await _fileService.GetFileURL(talent.VideoName, FileType.UserVideo),
+                CVUrl = string.IsNullOrWhiteSpace(talent.CvName)
+                    ? ""
+                    : await _fileService.GetFileURL(talent.CvName, FileType.UserCV),
+                Summary = talent.Summary,
+                CurrentEmployment = latestJob?.Company ?? "",
+                Visa = talent.VisaStatus,
+                Level = latestJob?.Position ?? "",
+                Skills = (talent.Skills ?? new List<UserSkill>()).Select(x => x.Skill).ToList(),
+                LinkedIn = talent.LinkedAccounts?.LinkedIn,
+                Github = talent.LinkedAccounts?.Github
             };
         }
 
