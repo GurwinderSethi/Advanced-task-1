@@ -21,16 +21,23 @@ export default class VisaStatus extends React.Component {
         this.props.updateProfileData({ [event.target.name]: event.target.value });
     }
 
+    needsExpiryDate() {
+        return this.props.visaStatus === 'Work Visa' || this.props.visaStatus === 'Student Visa';
+    }
+
     saveVisaStatus() {
+        // Citizens and permanent residents have no expiry, so don't keep a stale date for them.
         this.props.saveProfileData({
             visaStatus: this.props.visaStatus,
-            visaExpiryDate: this.props.visaExpiryDate
+            visaExpiryDate: this.needsExpiryDate() ? (this.props.visaExpiryDate || null) : null
         });
     }
 
     render() {
-        const needsExpiryDate = this.props.visaStatus === 'Work Visa' || this.props.visaStatus === 'Student Visa';
-        const alreadyExpired = new Date(this.props.visaExpiryDate) <= Date.now();
+        const needsExpiryDate = this.needsExpiryDate();
+        // The server returns a full timestamp (e.g. 2026-12-31T00:00:00Z), but a date input only accepts yyyy-MM-dd.
+        const expiryDate = this.props.visaExpiryDate ? String(this.props.visaExpiryDate).substring(0, 10) : '';
+        const alreadyExpired = expiryDate !== '' && new Date(expiryDate) <= Date.now();
 
         return (
             <React.Fragment>
@@ -52,7 +59,7 @@ export default class VisaStatus extends React.Component {
                             label='Visa Expiry Date'
                             inputType='date'
                             name='visaExpiryDate'
-                            value={this.props.visaExpiryDate}
+                            value={expiryDate}
                             controlFunc={this.handleChange}
                             errorMessage='Already past expiry date'
                             isError={alreadyExpired}
