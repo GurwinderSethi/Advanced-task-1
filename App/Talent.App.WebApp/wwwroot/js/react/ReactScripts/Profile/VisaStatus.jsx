@@ -2,6 +2,9 @@
 import { Select } from '../Form/Select.jsx';
 import { ChildSingleInput } from '../Form/SingleInput.jsx';
 
+// Visa types that have an expiry date (citizens and permanent residents don't).
+const VISA_TYPES_REQUIRING_EXPIRY = ['Work Visa', 'Student Visa'];
+
 export default class VisaStatus extends React.Component {
     constructor(props) {
         super(props);
@@ -22,7 +25,7 @@ export default class VisaStatus extends React.Component {
     }
 
     needsExpiryDate() {
-        return this.props.visaStatus === 'Work Visa' || this.props.visaStatus === 'Student Visa';
+        return VISA_TYPES_REQUIRING_EXPIRY.includes(this.props.visaStatus);
     }
 
     saveVisaStatus() {
