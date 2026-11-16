@@ -40,7 +40,11 @@ export default class VisaStatus extends React.Component {
         const needsExpiryDate = this.needsExpiryDate();
         // The server returns a full timestamp (e.g. 2026-12-31T00:00:00Z), but a date input only accepts yyyy-MM-dd.
         const expiryDate = this.props.visaExpiryDate ? String(this.props.visaExpiryDate).substring(0, 10) : '';
-        const alreadyExpired = expiryDate !== '' && new Date(expiryDate) <= Date.now();
+        // Compare yyyy-MM-dd strings against today's local date. new Date('yyyy-MM-dd') is UTC midnight,
+        // which in time zones ahead of UTC (e.g. NZ) has already passed, so a visa expiring today showed as expired.
+        const now = new Date();
+        const today = [now.getFullYear(), String(now.getMonth() + 1).padStart(2, '0'), String(now.getDate()).padStart(2, '0')].join('-');
+        const alreadyExpired = expiryDate !== '' && expiryDate < today;
 
         return (
             <React.Fragment>
