@@ -43,7 +43,7 @@ export default function TalentFeed() {
                     setCompanyDetails(res.employer.companyContact);
                 }
             },
-            error: res => console.log(res)
+            error: () => TalentUtil.notification.show("Couldn't load company details", "error", null, null)
         });
     };
 
@@ -78,9 +78,9 @@ export default function TalentFeed() {
                     TalentUtil.notification.show("Couldn't load talent feed", "error", null, null);
                 }
             },
-            error: res => {
+            error: () => {
                 paging.current.hasMore = false;
-                console.log(res);
+                TalentUtil.notification.show("Couldn't load talent feed", "error", null, null);
             },
             complete: () => {
                 paging.current.loading = false;
@@ -105,6 +105,14 @@ export default function TalentFeed() {
 
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
+
+    useEffect(() => {
+        // If the cards loaded so far don't fill the screen there's nothing to scroll,
+        // so keep loading until they do (loadFeedData stops once there's no more data).
+        if (!loadingFeedData && document.body.offsetHeight <= window.innerHeight) {
+            loadFeedData();
+        }
+    }, [feedData, loadingFeedData]);
 
     const renderFeed = () => {
         if (feedData.length === 0 && !loadingFeedData) {
