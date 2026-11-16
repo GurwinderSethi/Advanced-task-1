@@ -68,7 +68,24 @@ export default class Language extends React.Component {
         this.setState({ newLanguage: language });
     }
 
+    // True if another language (not the one with excludeId) already has this name, ignoring case and spaces.
+    isDuplicateName(name, excludeId) {
+        const normalised = (name || '').trim().toLowerCase();
+        return this.props.languageData.some(value =>
+            !(excludeId && value.id === excludeId) && (value.name || '').trim().toLowerCase() === normalised
+        );
+    }
+
+    showDuplicateError(name) {
+        TalentUtil.notification.show(`${name.trim()} is already in your languages`, "error", null, null);
+    }
+
     editLanguage(language) {
+        if (this.isDuplicateName(language.name, language.id)) {
+            this.showDuplicateError(language.name);
+            return false;
+        }
+
         const editedLanguage = this.props.languageData.map(value => {
             if (value.id === language.id) {
                 return language;
@@ -82,6 +99,7 @@ export default class Language extends React.Component {
         };
 
         this.props.updateProfileData(profileData);
+        return true;
     }
 
     deleteLanguage(language) {
@@ -97,6 +115,12 @@ export default class Language extends React.Component {
     }
 
     saveLanguage() {
+        // Keep the form open so the user can change the name.
+        if (this.isDuplicateName(this.state.newLanguage.name, null)) {
+            this.showDuplicateError(this.state.newLanguage.name);
+            return;
+        }
+
         const profileData = {
             languages: [...this.props.languageData, this.state.newLanguage]
         };
@@ -197,9 +221,10 @@ class LanguageItem extends React.Component {
             level: this.state.level
         };
 
-        this.props.updateLanguage(language);
-
-        this.closeEdit();
+        // Only close the form if the parent accepted the change (it rejects duplicate names).
+        if (this.props.updateLanguage(language)) {
+            this.closeEdit();
+        }
     }
 
     deleteLanguage() {
