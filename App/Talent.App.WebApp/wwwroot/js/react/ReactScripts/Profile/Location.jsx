@@ -58,15 +58,19 @@ export class Address extends React.Component {
 
     renderDisplay() {
         const addressData = this.props.addressData;
-        const address = `${addressData.number}, ${addressData.street}, ${addressData.suburb}, ${addressData.postCode}`;
+        // Only join the parts that are filled in. An empty post code is stored as 0, so treat 0 as missing.
+        const postCode = addressData.postCode ? addressData.postCode : '';
+        const address = [addressData.number, addressData.street, addressData.suburb, postCode]
+            .filter(part => part)
+            .join(', ');
         const city = addressData.city;
         const country = addressData.country;
 
         return (
             <div className='ui sixteen wide column'>
-                <p>Address: {address}</p>
-                <p>City: {city}</p>
-                <p>Country: {country}</p>
+                <p>Address: {address || '-'}</p>
+                <p>City: {city || '-'}</p>
+                <p>Country: {country || '-'}</p>
                 <button type="button" className="ui right floated teal button" onClick={this.openEdit}>Edit</button>
             </div>
         );

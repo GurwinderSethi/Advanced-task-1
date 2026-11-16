@@ -117,7 +117,8 @@ export class IndividualDetailSection extends Component {
 
     renderDisplay() {
 
-        let fullName = this.props.details ? `${this.props.details.firstName} ${this.props.details.lastName}` : ""
+        // Join only the name parts that are set, so a missing name doesn't show as "null null".
+        let fullName = this.props.details ? [this.props.details.firstName, this.props.details.lastName].filter(x => x).join(' ') : ""
         let email = this.props.details ? this.props.details.email : ""
         let phone = this.props.details ? this.props.details.phone : ""
 
@@ -125,9 +126,9 @@ export class IndividualDetailSection extends Component {
             <div className='row'>
                 <div className="ui sixteen wide column">
                     <React.Fragment>
-                        <p>Name: {fullName}</p>
-                        <p>Email: {email}</p>
-                        <p>Phone: {phone}</p>
+                        <p>Name: {fullName || '-'}</p>
+                        <p>Email: {email || '-'}</p>
+                        <p>Phone: {phone || '-'}</p>
                     </React.Fragment>
                     <button type="button" className="ui right floated teal button" onClick={this.openEdit}>Edit</button>
                 </div>
@@ -257,10 +258,10 @@ export class CompanyDetailSection extends Component {
             <div className='row'>
                 <div className="ui sixteen wide column">
                     <React.Fragment>
-                        <p>Name: {companyName}</p>
-                        <p>Email: {email}</p>
-                        <p>Phone: {phone}</p>
-                        <p> Location: {location.city}, {location.country}</p>
+                        <p>Name: {companyName || '-'}</p>
+                        <p>Email: {email || '-'}</p>
+                        <p>Phone: {phone || '-'}</p>
+                        <p>Location: {[location.city, location.country].filter(x => x).join(', ') || '-'}</p>
                     </React.Fragment>
                     <button type="button" className="ui right floated teal button" onClick={this.openEdit}>Edit</button>
                 </div>
