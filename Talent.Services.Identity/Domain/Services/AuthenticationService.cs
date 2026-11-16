@@ -117,6 +117,7 @@ namespace Talent.Services.Identity.Domain.Services
                         Id = objectId,
                         FirstName = user.FirstName,
                         LastName = user.LastName,
+                        Email = user.Email,
                         CreatedOn = DateTime.UtcNow,
                         IsDeleted = false,
                         UId = UId,

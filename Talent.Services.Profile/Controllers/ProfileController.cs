@@ -242,8 +242,17 @@ namespace Talent.Services.Profile.Controllers
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "talent")]
         public async Task<ActionResult> UpdateProfilePhoto()
         {
-            //TODO: Your code here;
-            throw new NotImplementedException();
+            if (Request.Form.Files.Count == 0)
+            {
+                return Json(new { Success = false, Message = "No file was uploaded" });
+            }
+
+            IFormFile file = Request.Form.Files[0];
+            if (await _profileService.UpdateTalentPhoto(_userAppContext.CurrentUserId, file))
+            {
+                return Json(new { Success = true });
+            }
+            return Json(new { Success = false });
         }
 
         [HttpPost("updateTalentCV")]
@@ -333,7 +342,8 @@ namespace Talent.Services.Profile.Controllers
             }
             catch (Exception e)
             {
-                return Json(new { Success = false, message = e });
+                // Don't send exception details (stack trace, internals) to the client.
+                return Json(new { Success = false, message = "Couldn't load employer profile" });
             }
         }
 

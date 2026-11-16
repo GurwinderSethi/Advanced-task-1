@@ -67,7 +67,24 @@ export default class Skill extends React.Component {
         this.setState({ newSkill: skill });
     }
 
+    // True if another skill (not the one with excludeId) already has this name, ignoring case and spaces.
+    isDuplicateName(name, excludeId) {
+        const normalised = (name || '').trim().toLowerCase();
+        return this.props.skillData.some(value =>
+            !(excludeId && value.id === excludeId) && (value.name || '').trim().toLowerCase() === normalised
+        );
+    }
+
+    showDuplicateError(name) {
+        TalentUtil.notification.show(`${name.trim()} is already in your skills`, "error", null, null);
+    }
+
     editSkill(skill) {
+        if (this.isDuplicateName(skill.name, skill.id)) {
+            this.showDuplicateError(skill.name);
+            return false;
+        }
+
         const editedskill = this.props.skillData.map(value => {
             if (value.id === skill.id) {
                 return skill;
@@ -81,6 +98,7 @@ export default class Skill extends React.Component {
         };
 
         this.props.updateProfileData(profileData);
+        return true;
     }
 
     deleteSkill(skill) {
@@ -96,6 +114,12 @@ export default class Skill extends React.Component {
     }
 
     saveSkill() {
+        // Keep the form open so the user can change the name.
+        if (this.isDuplicateName(this.state.newSkill.name, null)) {
+            this.showDuplicateError(this.state.newSkill.name);
+            return;
+        }
+
         const profileData = {
             skills: [...this.props.skillData, this.state.newSkill]
         };
@@ -197,9 +221,10 @@ class SkillItem extends React.Component {
             level: this.state.level
         };
 
-        this.props.updateSkill(skill);
-
-        this.closeEdit();
+        // Only close the form if the parent accepted the change (it rejects duplicate names).
+        if (this.props.updateSkill(skill)) {
+            this.closeEdit();
+        }
     }
 
     deleteSkill() {

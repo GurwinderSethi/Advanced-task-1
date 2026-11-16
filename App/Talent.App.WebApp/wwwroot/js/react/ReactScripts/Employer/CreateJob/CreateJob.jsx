@@ -34,7 +34,10 @@ export default class CreateJob extends React.Component {
                     startDate: moment(),
                     salary: { from: 0, to: 0 },
                     location: { country: "", city: ""}
-                }
+                },
+                // Match the default the date picker shows. Without this, a job saved without touching
+                // the picker has no expiry date, the server stores 0001-01-01, and it shows as Expired.
+                expiryDate: moment().add(14, 'days')
             },
             loaderData: loaderData
         }
@@ -82,9 +85,9 @@ export default class CreateJob extends React.Component {
                     if (res.success == true) {
                         res.jobData.jobDetails.startDate = moment(res.jobData.jobDetails.startDate);
                         res.jobData.jobDetails.endDate = res.jobData.jobDetails.endDate ? moment(res.jobData.jobDetails.endDate) : null;
-                        res.jobData.expiryDate = res.jobData.expiryDate
-                            ? moment(res.jobData.expiryDate) > moment()
-                                ? moment(res.jobData.expiryDate) : moment().add(14,'days') : null;
+                        // Keep a future expiry date; otherwise (missing or already past) default to 14 days from now.
+                        res.jobData.expiryDate = res.jobData.expiryDate && moment(res.jobData.expiryDate) > moment()
+                            ? moment(res.jobData.expiryDate) : moment().add(14, 'days');
                         this.setState({ jobData: res.jobData })
                     } else {
                         TalentUtil.notification.show(res.message, "error", null, null)

@@ -2,6 +2,9 @@
 import { Select } from '../Form/Select.jsx';
 import { ChildSingleInput } from '../Form/SingleInput.jsx';
 
+// Visa types that have an expiry date (citizens and permanent residents don't).
+const VISA_TYPES_REQUIRING_EXPIRY = ['Work Visa', 'Student Visa'];
+
 export default class VisaStatus extends React.Component {
     constructor(props) {
         super(props);
@@ -21,16 +24,27 @@ export default class VisaStatus extends React.Component {
         this.props.updateProfileData({ [event.target.name]: event.target.value });
     }
 
+    needsExpiryDate() {
+        return VISA_TYPES_REQUIRING_EXPIRY.includes(this.props.visaStatus);
+    }
+
     saveVisaStatus() {
+        // Citizens and permanent residents have no expiry, so don't keep a stale date for them.
         this.props.saveProfileData({
             visaStatus: this.props.visaStatus,
-            visaExpiryDate: this.props.visaExpiryDate
+            visaExpiryDate: this.needsExpiryDate() ? (this.props.visaExpiryDate || null) : null
         });
     }
 
     render() {
-        const needsExpiryDate = this.props.visaStatus === 'Work Visa' || this.props.visaStatus === 'Student Visa';
-        const alreadyExpired = new Date(this.props.visaExpiryDate) <= Date.now();
+        const needsExpiryDate = this.needsExpiryDate();
+        // The server returns a full timestamp (e.g. 2026-12-31T00:00:00Z), but a date input only accepts yyyy-MM-dd.
+        const expiryDate = this.props.visaExpiryDate ? String(this.props.visaExpiryDate).substring(0, 10) : '';
+        // Compare yyyy-MM-dd strings against today's local date. new Date('yyyy-MM-dd') is UTC midnight,
+        // which in time zones ahead of UTC (e.g. NZ) has already passed, so a visa expiring today showed as expired.
+        const now = new Date();
+        const today = [now.getFullYear(), String(now.getMonth() + 1).padStart(2, '0'), String(now.getDate()).padStart(2, '0')].join('-');
+        const alreadyExpired = expiryDate !== '' && expiryDate < today;
 
         return (
             <React.Fragment>
@@ -52,7 +66,7 @@ export default class VisaStatus extends React.Component {
                             label='Visa Expiry Date'
                             inputType='date'
                             name='visaExpiryDate'
-                            value={this.props.visaExpiryDate}
+                            value={expiryDate}
                             controlFunc={this.handleChange}
                             errorMessage='Already past expiry date'
                             isError={alreadyExpired}

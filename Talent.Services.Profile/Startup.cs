@@ -51,11 +51,10 @@ namespace Talent.Services.Profile
                 });
             });
 
+            // Cap uploads at 30 MB (Kestrel's default request size) so one request can't fill the disk.
             services.Configure<FormOptions>(x =>
             {
-                x.ValueLengthLimit = int.MaxValue;
-                x.MultipartBodyLengthLimit = int.MaxValue;
-                x.MultipartHeadersLengthLimit = int.MaxValue;
+                x.MultipartBodyLengthLimit = 30 * 1024 * 1024;
             });
 
             services.AddControllers()
@@ -101,26 +100,17 @@ namespace Talent.Services.Profile
                 app.UseDeveloperExceptionPage();
             }
 
-            // Add this middleware to handle OPTIONS requests globally
-            app.Use(async (context, next) =>
-            {
-                if (context.Request.Method == "OPTIONS")
-                {
-                    context.Response.Headers.Add("Access-Control-Allow-Origin",
-                        "*"); // Replace * with specific origin if needed
-                    context.Response.Headers.Add("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-                    context.Response.Headers.Add("Access-Control-Allow-Headers", "Content-Type, Authorization");
-                    context.Response.Headers.Add("Access-Control-Allow-Credentials", "true"); // Only if needed
-                    context.Response.StatusCode = 200;
-                    await context.Response.CompleteAsync();
-                }
-                else
-                {
-                    await next();
-                }
-            });
-
+            // The CORS policy also answers preflight (OPTIONS) requests, only for the origins in cors:origins.
             app.UseCors("AllowWebAppAccess");
+
+            // Serve uploaded files (saved by FileService) from the local images folder.
+            var imagesPath = System.IO.Path.Combine(env.ContentRootPath, "images");
+            System.IO.Directory.CreateDirectory(imagesPath);
+            app.UseStaticFiles(new StaticFileOptions
+            {
+                FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(imagesPath),
+                RequestPath = "/images"
+            });
 
             app.UseRouting();
             app.UseAuthentication();
